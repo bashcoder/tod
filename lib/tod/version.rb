@@ -1,3 +1,3 @@
-class TimeOfDay
-  VERSION = "1.2.0"
+module Tod
+  VERSION = "1.4.0"
 end

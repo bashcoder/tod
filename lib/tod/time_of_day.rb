@@ -33,6 +33,11 @@ module Tod
       \z
     /x
 
+    WORDS = {
+      "noon" => "12pm",
+      "midnight" => "12am"
+    }
+
     NUM_SECONDS_IN_DAY = 86400
     NUM_SECONDS_IN_HOUR = 3600
     NUM_SECONDS_IN_MINUTE = 60
@@ -113,8 +118,18 @@ module Tod
     #   TimeOfDay.parse "515p"                         # => 17:15:00
     #   TimeOfDay.parse "151253"                       # => 15:12:53
     def self.parse(tod_string)
+      try_parse(tod_string) || (raise ArgumentError, "Invalid time of day string")
+    end
+
+    # Same as parse(), but return nil if not parsable (instead of raising an error)
+    #   TimeOfDay.try_parse "8am"                      # => 08:00:00
+    #   TimeOfDay.try_parse ""                         # => nil
+    #   TimeOfDay.try_parse "abc"                      # => nil
+    def self.try_parse(tod_string)
+      tod_string = tod_string.to_s
       tod_string = tod_string.strip
       tod_string = tod_string.downcase
+      tod_string = WORDS[tod_string] || tod_string
       if PARSE_24H_REGEX =~ tod_string || PARSE_12H_REGEX =~ tod_string
         hour, minute, second, a_or_p = $1.to_i, $2.to_i, $3.to_i, $4
         if hour == 12 && a_or_p == "a"
@@ -125,8 +140,15 @@ module Tod
 
         new hour, minute, second
       else
-        raise ArgumentError, "Invalid time of day string"
+        nil
       end
+    end
+
+    # Determine if a string is parsable into a TimeOfDay instance
+    #   TimeOfDay.parsable? "8am"                      # => true
+    #   TimeOfDay.parsable? "abc"                      # => false
+    def self.parsable?(tod_string)
+      !!try_parse(tod_string)
     end
 
     # If ActiveSupport TimeZone is available and set use current time zone else return Time
@@ -135,7 +157,11 @@ module Tod
     end
 
     def self.dump(time_of_day)
-      time_of_day.to_s
+      if time_of_day.to_s == ''
+        nil
+      else
+        time_of_day.to_s
+      end
     end
 
     def self.load(time)
@@ -147,5 +173,3 @@ module Tod
     end
   end
 end
-
-TimeOfDay = Tod::TimeOfDay
